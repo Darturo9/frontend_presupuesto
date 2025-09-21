@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import LoginModal from '@/components/LoginModal';
+
 
 export default function Header() {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -35,7 +35,6 @@ export default function Header() {
                     </button>
                 )}
             </nav>
-            <LoginModal open={showLoginModal} onClose={() => setShowLoginModal(false)} />
         </header>
     );
 }
