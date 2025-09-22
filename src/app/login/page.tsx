@@ -1,11 +1,16 @@
 'use client';
 
+import { login } from '@/lib/users';
 import { useState } from 'react';
+import { signIn, signOut, useSession } from "next-auth/react";
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const router = useRouter();
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -14,7 +19,15 @@ export default function LoginPage() {
             return;
         }
         setError('');
-        // Lógica de autenticación aquí
+        try {
+            const data = await login(email, password)
+            console.log(data)
+            Cookies.set('token', data.access_token, { expires: 7 }); // Guarda el token por 7 días
+            router.push('/');
+        } catch (err: any) {
+            setError(err.message)
+        }
+
     };
 
     return (
@@ -30,7 +43,7 @@ export default function LoginPage() {
                             <div className="flex flex-col items-center">
                                 <button
                                     className="cursor-pointer w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow"
-                                    onClick={() => { console.log("iniciar con google") }}
+                                    onClick={() => signIn("google")}
                                 >
                                     <img
                                         src="https://www.svgrepo.com/show/475656/google-color.svg"
