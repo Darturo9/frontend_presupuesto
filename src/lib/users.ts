@@ -18,4 +18,14 @@ export async function login(email: string, password: string) {
     } catch (error: any) {
         throw new Error(error.response?.data?.message || 'Error al iniciar sesión');
     }
+
+}
+
+export async function loginGoogle(data: { email: string; googleId: string; firstName?: string; lastName?: string; avatar?: string }) {
+    try {
+        const res = await api.post('/auth/google', data);
+        return res.data;
+    } catch (error: any) {
+        throw new Error(error.response?.data?.message || 'Error al iniciar sesión con Google');
+    }
 }

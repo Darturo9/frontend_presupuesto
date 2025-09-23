@@ -1,151 +1,100 @@
 'use client';
 
-import { login } from '@/lib/users';
-import { useState, useEffect } from 'react';
-import { signIn, signOut, useSession } from "next-auth/react";
-import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import { useSession, signIn } from "next-auth/react";
+import { useEffect, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
+import { loginGoogle, login } from "@/lib/users";
 
 export default function LoginPage() {
+    const { data: session } = useSession();
+    const router = useRouter();
+    const alreadySent = useRef(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
-    const { data: session, status } = useSession();
 
-    // Mostrar la sesión en consola cuando cambie
+    // Google login integration
     useEffect(() => {
-
-        // Redirigir si ya hay sesión de Google
-        if (session) {
-            router.push('/');
+        if (session?.user?.googleId && session.user.email && !alreadySent.current) {
+            alreadySent.current = true;
+            loginGoogle({
+                email: session.user.email,
+                googleId: session.user.googleId,
+                firstName: session.user.firstName,
+                lastName: session.user.lastName,
+                avatar: session.user.image ?? undefined, // <-- aquí
+            })
+                .then(res => {
+                    // Guarda el token si lo necesitas, ejemplo:
+                    // Cookies.set('token', res.access_token);
+                    router.push('/');
+                })
+                .catch(err => {
+                    setError(err.message || 'Error al iniciar sesión con Google');
+                });
         }
     }, [session, router]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!email || !password) {
-            setError('Por favor, completa todos los campos.');
-            return;
-        }
-
         setError('');
-        setIsLoading(true);
-
         try {
-            const data = await login(email, password);
-            console.log(data);
-            Cookies.set('token', data.access_token, { expires: 7 });
+            await login(email, password);
             router.push('/');
         } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setIsLoading(false);
+            setError(err.message || 'Error al iniciar sesión');
         }
     };
-
-    const handleGoogleSignIn = async () => {
-        try {
-            await signIn("google", { callbackUrl: '/' });
-        } catch (error) {
-            setError('Error al iniciar sesión con Google');
-        }
-    };
-
-    if (status === "loading") {
-        return (
-            <div className="min-h-screen flex items-center justify-center">
-                <div className="text-lg">Cargando...</div>
-            </div>
-        );
-    }
 
     return (
-        <div className="min-h-screen bg-gray-100 text-gray-900 flex justify-center">
-            <div className="max-w-screen-xl m-0 sm:m-10 bg-white shadow sm:rounded-lg flex justify-center flex-1">
-                {/* Columna del formulario */}
-                <div className="lg:w-1/2 xl:w-5/12 p-6 sm:p-12 flex flex-col">
-                    <div className="mt-12 flex flex-col items-center flex-1">
-                        <h1 className="text-2xl xl:text-3xl font-extrabold">
-                            Iniciar sesión
-                        </h1>
-                        <div className="w-full flex-1 mt-8">
-                            <div className="flex flex-col items-center">
-                                <button
-                                    className="cursor-pointer w-full max-w-xs font-bold shadow-sm rounded-lg py-3 bg-indigo-100 text-gray-800 flex items-center justify-center transition-all duration-300 ease-in-out focus:outline-none hover:shadow disabled:opacity-50"
-                                    onClick={handleGoogleSignIn}
-                                    disabled={isLoading}
-                                >
-                                    <img
-                                        src="https://www.svgrepo.com/show/475656/google-color.svg"
-                                        alt="Google"
-                                        className="w-5 h-5"
-                                    />
-                                    <span className="ml-4">Iniciar sesión con Google</span>
-                                </button>
-                            </div>
-
-                            <div className="my-12 border-b text-center">
-                                <div className="leading-none px-2 inline-block text-sm text-gray-600 tracking-wide font-medium bg-white transform translate-y-1/2">
-                                    O inicia sesión con tu correo
-                                </div>
-                            </div>
-
-                            <form className="mx-auto max-w-xs" onSubmit={handleSubmit}>
-                                <input
-                                    className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white"
-                                    type="email"
-                                    placeholder="Email"
-                                    value={email}
-                                    onChange={e => setEmail(e.target.value)}
-                                    disabled={isLoading}
-                                    required
-                                />
-                                <input
-                                    className="w-full px-8 py-4 rounded-lg font-medium bg-gray-100 border border-gray-200 placeholder-gray-500 text-sm focus:outline-none focus:border-gray-400 focus:bg-white mt-5"
-                                    type="password"
-                                    placeholder="Contraseña"
-                                    value={password}
-                                    onChange={e => setPassword(e.target.value)}
-                                    disabled={isLoading}
-                                    required
-                                />
-                                {error && (
-                                    <div className="text-red-500 text-sm mt-2">{error}</div>
-                                )}
-                                <button
-                                    type="submit"
-                                    disabled={isLoading}
-                                    className="cursor-pointer mt-5 tracking-wide font-semibold bg-indigo-500 text-gray-100 w-full py-4 rounded-lg hover:bg-indigo-700 transition-all duration-300 ease-in-out flex items-center justify-center focus:shadow-outline focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                    {isLoading ? (
-                                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                                    ) : (
-                                        <>
-                                            <svg className="w-6 h-6 -ml-2" fill="none" stroke="currentColor" strokeWidth="2"
-                                                strokeLinecap="round" strokeLinejoin="round">
-                                                <path d="M16 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" />
-                                                <circle cx="8.5" cy="7" r="4" />
-                                                <path d="M20 8v6M23 11h-6" />
-                                            </svg>
-                                            <span className="ml-3">
-                                                Iniciar sesión
-                                            </span>
-                                        </>
-                                    )}
-                                </button>
-                            </form>
-                        </div>
+        <div className="min-h-screen flex items-center justify-center bg-gray-100">
+            <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
+                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Iniciar sesión</h2>
+                <button
+                    type="button"
+                    onClick={() => signIn('google', { callbackUrl: '/login' })}
+                    className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded hover:bg-gray-100 transition mb-4"
+                >
+                    <svg className="w-5 h-5" viewBox="0 0 48 48">
+                        <g>
+                            <path fill="#4285F4" d="M24 9.5c3.54 0 6.73 1.22 9.24 3.23l6.92-6.92C36.68 2.36 30.7 0 24 0 14.82 0 6.73 5.08 2.69 12.44l8.06 6.26C12.36 13.08 17.74 9.5 24 9.5z" />
+                            <path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.42-4.74H24v9.02h12.42c-.54 2.92-2.18 5.39-4.66 7.06l7.18 5.59C43.93 37.14 46.1 31.34 46.1 24.5z" />
+                            <path fill="#FBBC05" d="M10.75 28.7c-1.01-2.99-1.01-6.21 0-9.2l-8.06-6.26C.98 17.7 0 20.75 0 24c0 3.25.98 6.3 2.69 8.76l8.06-6.26z" />
+                            <path fill="#EA4335" d="M24 48c6.7 0 12.68-2.21 16.9-6.02l-7.18-5.59c-2.01 1.35-4.59 2.11-7.72 2.11-6.26 0-11.64-3.58-13.25-8.7l-8.06 6.26C6.73 42.92 14.82 48 24 48z" />
+                            <path fill="none" d="M0 0h48v48H0z" />
+                        </g>
+                    </svg>
+                    Iniciar sesión con Google
+                </button>
+                <form className="space-y-4" onSubmit={handleSubmit}>
+                    <div>
+                        <label className="block mb-1 font-medium text-gray-700">Email</label>
+                        <input
+                            type="email"
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            required
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                        />
                     </div>
-                </div>
-                {/* Columna derecha con imagen de fondo */}
-                <div className="flex-1 hidden lg:flex">
-                    <div
-                        className="m-0 w-full h-full bg-cover bg-center rounded-r-lg"
-                        style={{ backgroundImage: "url('/planta_dinero.jpg')" }}
-                    />
-                </div>
+                    <div>
+                        <label className="block mb-1 font-medium text-gray-700">Contraseña</label>
+                        <input
+                            type="password"
+                            className="w-full border border-gray-300 rounded px-3 py-2"
+                            required
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                        />
+                    </div>
+                    {error && <div className="text-red-500 text-sm">{error}</div>}
+                    <button
+                        type="submit"
+                        className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+                    >
+                        Iniciar sesión
+                    </button>
+                </form>
             </div>
         </div>
     );

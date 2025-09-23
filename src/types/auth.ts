@@ -1,6 +1,7 @@
 export type RegisterData = {
     email: string;
-    password: string;
+    password?: string;
+    googleId?: string;
     firstName: string;
     lastName: string;
     avatar?: string;
