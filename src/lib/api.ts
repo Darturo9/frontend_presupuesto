@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: 'http://localhost:3000', // Cambia por la URL de tu backend NestJS
+    baseURL: process.env.NEXT_PUBLIC_API_URL, // Usa variable de entorno
     // Puedes agregar más configuración aquí (headers, timeout, etc.)
 });
 

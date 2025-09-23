@@ -2,18 +2,23 @@
 
 import Cookies from 'js-cookie';
 import { useEffect, useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 export default function HomePage() {
   const [isLogged, setIsLogged] = useState(false);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const token = Cookies.get('token');
-    setIsLogged(!!token);
-  }, []);
+    console.log("SESSION EN HOME:", session);
+    // Considera logeado si hay token O si hay sesión de NextAuth
+    setIsLogged(!!token || !!session);
+  }, [session]);
 
   const handleLogout = () => {
     Cookies.remove('token');
     setIsLogged(false);
+    if (session) signOut(); // Cierra sesión de Google si existe
   };
 
   return (
