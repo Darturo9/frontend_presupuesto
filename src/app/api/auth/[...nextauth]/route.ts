@@ -1,14 +1,6 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
-
-function splitName(fullName?: string) {
-    if (!fullName) return { firstName: undefined, lastName: undefined };
-    const parts = fullName.split(' ');
-    return {
-        firstName: parts[0],
-        lastName: parts.slice(1).join(' ') || undefined,
-    };
-}
+import axios from 'axios';
 
 const handler = NextAuth({
     debug: true,
@@ -20,22 +12,54 @@ const handler = NextAuth({
         }),
     ],
     callbacks: {
-        async jwt({ token, profile, account }) {
-            // Guarda el googleId (sub) y nombre/apellido en el token
+        async signIn({ user, account, profile }) {
+            if (account?.provider === 'google' && profile) {
+                try {
+                    // Llamar a tu backend para obtener JWT
+                    const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/auth/google`, {
+                        email: profile.email,
+                        googleId: profile.sub,
+                        firstName: (profile as any).given_name,
+                        lastName: (profile as any).family_name,
+                        avatar: (profile as any).picture
+                    });
+
+                    // Guardamos el token en el user object
+                    user.backendToken = response.data.access_token;
+                    return true;
+                } catch (error) {
+                    console.error('Error al conectar con backend:', error);
+                    return false;
+                }
+            }
+            return true;
+        },
+
+        async jwt({ token, user, profile }) {
+            // Si tenemos token del backend, lo guardamos
+            if (user?.backendToken) {
+                token.backendToken = user.backendToken;
+            }
+
+            // Guardamos también los datos del perfil para la sesión
             if (profile) {
                 token.googleId = profile.sub;
-                const { firstName, lastName } = splitName(profile.name);
-                token.firstName = firstName;
-                token.lastName = lastName;
+                token.firstName = (profile as any).given_name;
+                token.lastName = (profile as any).family_name;
+                token.avatar = (profile as any).picture;
             }
+
             return token;
         },
+
         async session({ session, token }) {
-            // Pasa googleId, firstName y lastName a la sesión del usuario
+            // Pasamos toda la información a la sesión
             if (session.user) {
+                if (token.backendToken) session.backendToken = token.backendToken as string;
                 if (token.googleId) session.user.googleId = token.googleId as string;
                 if (token.firstName) session.user.firstName = token.firstName as string;
                 if (token.lastName) session.user.lastName = token.lastName as string;
+                if (token.avatar) session.user.avatar = token.avatar as string;
             }
             return session;
         },

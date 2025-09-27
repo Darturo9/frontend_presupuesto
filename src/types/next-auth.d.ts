@@ -5,8 +5,12 @@ declare module "next-auth" {
         googleId?: string;
         firstName?: string;
         lastName?: string;
+        avatar?: string;
+        backendToken?: string;
     }
+
     interface Session {
         user?: User;
+        backendToken?: string;
     }
 }

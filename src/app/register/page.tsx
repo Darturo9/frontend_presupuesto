@@ -4,6 +4,7 @@ import { useSession, signIn } from "next-auth/react";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { register, loginGoogle } from "@/lib/users";
+import Cookies from 'js-cookie';
 
 export default function RegisterPage() {
     const { data: session } = useSession();
@@ -30,7 +31,7 @@ export default function RegisterPage() {
             })
                 .then(res => {
                     // Guarda el token si lo necesitas, ejemplo:
-                    // Cookies.set('token', res.access_token);
+                    Cookies.set('token', res.access_token);
                     router.push('/');
                 })
                 .catch(err => {
@@ -65,25 +66,27 @@ export default function RegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-100">
-            <div className="w-full max-w-md p-8 bg-white rounded-lg shadow-lg">
-                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Crear cuenta</h2>
+        <div className="min-h-screen bg-gray-100 flex">
+            {/* Panel izquierdo - Formulario */}
+            <div className="flex-1 flex items-center justify-center p-8">
+                <div className="w-full max-w-md">
+                    <div className="mb-8">
+                        <h2 className="text-3xl font-bold text-gray-800 mb-2">Crea tu cuenta</h2>
+                        <p className="text-gray-600">Únete y toma control de tu dinero</p>
+                    </div>
                 <button
                     type="button"
                     onClick={() => signIn('google', { callbackUrl: '/register' })}
                     className="w-full flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 py-2 rounded hover:bg-gray-100 transition mb-4"
                 >
-                    <svg className="w-5 h-5" viewBox="0 0 48 48">
-                        <g>
-                            <path fill="#4285F4" d="M24 9.5c3.54 0 6.73 1.22 9.24 3.23l6.92-6.92C36.68 2.36 30.7 0 24 0 14.82 0 6.73 5.08 2.69 12.44l8.06 6.26C12.36 13.08 17.74 9.5 24 9.5z" />
-                            <path fill="#34A853" d="M46.1 24.5c0-1.64-.15-3.22-.42-4.74H24v9.02h12.42c-.54 2.92-2.18 5.39-4.66 7.06l7.18 5.59C43.93 37.14 46.1 31.34 46.1 24.5z" />
-                            <path fill="#FBBC05" d="M10.75 28.7c-1.01-2.99-1.01-6.21 0-9.2l-8.06-6.26C.98 17.7 0 20.75 0 24c0 3.25.98 6.3 2.69 8.76l8.06-6.26z" />
-                            <path fill="#EA4335" d="M24 48c6.7 0 12.68-2.21 16.9-6.02l-7.18-5.59c-2.01 1.35-4.59 2.11-7.72 2.11-6.26 0-11.64-3.58-13.25-8.7l-8.06 6.26C6.73 42.92 14.82 48 24 48z" />
-                            <path fill="none" d="M0 0h48v48H0z" />
-                        </g>
-                    </svg>
+                    <img src="/logoGoogle.png" alt="Google" className="w-5 h-5" />
                     Registrarse con Google
                 </button>
+                <div className="flex items-center my-4">
+                    <hr className="flex-grow border-gray-300" />
+                    <span className="mx-2 text-gray-400">o</span>
+                    <hr className="flex-grow border-gray-300" />
+                </div>
                 <form className="space-y-4" onSubmit={handleSubmit}>
                     <div>
                         <label className="block mb-1 font-medium text-gray-700">Nombre</label>
@@ -153,6 +156,35 @@ export default function RegisterPage() {
                         Crear cuenta
                     </button>
                 </form>
+
+                {/* Link a login */}
+                <p className="mt-6 text-center text-gray-600">
+                    ¿Ya tienes cuenta?{' '}
+                    <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium">
+                        Inicia sesión aquí
+                    </a>
+                </p>
+                </div>
+            </div>
+
+            {/* Panel derecho - Imagen */}
+            <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-400 to-purple-500 items-center justify-center p-8">
+                <div className="text-center text-white">
+                    <img
+                        src="/planta_dinero.jpg"
+                        alt="Presupuesto Personal"
+                        className="h-64 w-64 mx-auto rounded-full object-cover shadow-2xl mb-8"
+                    />
+                    <h3 className="text-2xl font-bold mb-4">¡Comienza tu viaje financiero!</h3>
+                    <p className="text-lg opacity-90 mb-6">
+                        Más de 10,000 usuarios ya confían en nosotros
+                    </p>
+                    <div className="space-y-3 text-sm opacity-80">
+                        <p>🚀 Configuración rápida y fácil</p>
+                        <p>🔒 Tus datos están completamente seguros</p>
+                        <p>📊 Reportes detallados de tus finanzas</p>
+                    </div>
+                </div>
             </div>
         </div>
     );
