@@ -1,8 +1,29 @@
+import { useState } from 'react';
 import { useDashboardStats } from '@/lib/hooks/useDashboardStats';
 import StatCard from './StatCard';
+import CreateTransactionModal from '../transactions/CreateTransactionModal';
 
-export default function DashboardStats() {
+interface DashboardStatsProps {
+  onTransactionCreated?: () => void;
+}
+
+export default function DashboardStats({ onTransactionCreated }: DashboardStatsProps) {
   const { stats, loading, error, refetch } = useDashboardStats();
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+
+  const handleAddIncome = () => {
+    setShowIncomeModal(true);
+  };
+
+  const handleAddExpense = () => {
+    setShowExpenseModal(true);
+  };
+
+  const handleModalSuccess = () => {
+    refetch(); // Actualizar estadísticas después de crear una transacción
+    onTransactionCreated?.(); // Actualizar transacciones recientes
+  };
 
   if (error) {
     return (
@@ -24,27 +45,46 @@ export default function DashboardStats() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <StatCard
-        title="Balance Total"
-        value={stats?.balance ?? 0}
-        type="balance"
-        isLoading={loading}
-      />
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard
+          title="Balance Total"
+          value={stats?.balance ?? 0}
+          type="balance"
+          isLoading={loading}
+        />
 
-      <StatCard
-        title="Ingresos"
-        value={stats?.totalIncome ?? 0}
+        <StatCard
+          title="Ingresos"
+          value={stats?.totalIncome ?? 0}
+          type="income"
+          isLoading={loading}
+          onAddTransaction={handleAddIncome}
+        />
+
+        <StatCard
+          title="Gastos"
+          value={stats?.totalExpenses ?? 0}
+          type="expense"
+          isLoading={loading}
+          onAddTransaction={handleAddExpense}
+        />
+      </div>
+
+      {/* Modales */}
+      <CreateTransactionModal
+        isOpen={showIncomeModal}
+        onClose={() => setShowIncomeModal(false)}
+        onSuccess={handleModalSuccess}
         type="income"
-        isLoading={loading}
       />
 
-      <StatCard
-        title="Gastos"
-        value={stats?.totalExpenses ?? 0}
+      <CreateTransactionModal
+        isOpen={showExpenseModal}
+        onClose={() => setShowExpenseModal(false)}
+        onSuccess={handleModalSuccess}
         type="expense"
-        isLoading={loading}
       />
-    </div>
+    </>
   );
 }
