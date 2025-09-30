@@ -26,7 +26,7 @@ export default function LoginPage() {
                 avatar: session.user.image ?? undefined,
             })
                 .then(res => {
-                    Cookies.set('token', res.access_token);
+                    Cookies.set('token', res.access_token, { path: '/', expires: 7 });
                     router.push('/');
                 })
                 .catch(err => {
@@ -40,7 +40,7 @@ export default function LoginPage() {
         setError('');
         try {
             const res = await login(email, password);
-            Cookies.set('token', res.access_token);
+            Cookies.set('token', res.access_token, { path: '/', expires: 7 });
             router.push('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');

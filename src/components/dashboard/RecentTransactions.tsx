@@ -113,9 +113,17 @@ export default function RecentTransactions() {
 
     return (
         <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-semibold text-gray-700 mb-4">
-                Transacciones Recientes
-            </h3>
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-700">
+                    Transacciones Recientes
+                </h3>
+                <a
+                    href="/dashboard/transactions"
+                    className="text-sm text-blue-600 hover:text-blue-800 transition"
+                >
+                    Ver todas las transacciones
+                </a>
+            </div>
             <div className="space-y-3">
                 {transactions.map((transaction) => (
                     <div

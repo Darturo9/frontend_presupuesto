@@ -14,10 +14,16 @@ export const useAuth = () => {
             return;
         }
 
-        // Si forzamos logout, mantener desautenticado
+        // Si forzamos logout, mantener desautenticado y NO reestablecer el token
         if (forceLogout) {
             setIsAuthenticated(false);
             setIsLoading(false);
+            // Asegurarnos de que el token esté borrado
+            const tokenExists = Cookies.get('token');
+            if (tokenExists) {
+                Cookies.remove('token');
+                Cookies.remove('token', { path: '/' });
+            }
             return;
         }
 
@@ -25,7 +31,7 @@ export const useAuth = () => {
 
         // Si hay sesión de Google, guardamos el token automáticamente
         if (session?.backendToken) {
-            Cookies.set('token', session.backendToken, { expires: 7 }); // 7 días
+            Cookies.set('token', session.backendToken, { path: '/', expires: 7 }); // 7 días
             setIsAuthenticated(true);
             // Reset forceLogout cuando hay una nueva sesión válida
             setForceLogout(false);
@@ -49,6 +55,7 @@ export const useAuth = () => {
         setForceLogout(true);
         setIsAuthenticated(false);
         Cookies.remove('token');
+        Cookies.remove('token', { path: '/' });
 
         if (session) {
             await nextAuthSignOut({ redirect: false });

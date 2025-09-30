@@ -1,39 +1,65 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import Cookies from 'js-cookie';
 import { useErrorHandler } from '@/lib/hooks/useErrorHandler';
+import { getUserProfile, updateUserProfile, uploadAvatar } from '@/lib/users';
 
 interface UserInfo {
     firstName: string;
     lastName: string;
     email: string;
     phone?: string;
+    avatar?: string;
 }
 
 export default function PersonalInfo() {
     const { handleError } = useErrorHandler();
+    const { data: session } = useSession();
     const [userInfo, setUserInfo] = useState<UserInfo>({
         firstName: '',
         lastName: '',
         email: '',
-        phone: ''
+        phone: '',
+        avatar: ''
     });
     const [loading, setLoading] = useState(false);
+    const [loadingProfile, setLoadingProfile] = useState(true);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
     const [editing, setEditing] = useState(false);
     const [originalInfo, setOriginalInfo] = useState<UserInfo | null>(null);
 
-    // Simular carga de datos del usuario (después conectaremos con el backend)
+    // Cargar datos del usuario desde el backend
     useEffect(() => {
-        // TODO: Implementar llamada al backend para obtener datos del usuario
-        const mockUserData = {
-            firstName: 'Usuario',
-            lastName: 'Demo',
-            email: 'usuario@example.com',
-            phone: ''
+        const loadUserProfile = async () => {
+            const token = Cookies.get('token');
+            if (!token) {
+                setLoadingProfile(false);
+                return;
+            }
+
+            try {
+                setLoadingProfile(true);
+                const userData = await getUserProfile();
+                const userInfoData = {
+                    firstName: userData.firstName || '',
+                    lastName: userData.lastName || '',
+                    email: userData.email || '',
+                    phone: userData.phone || '',
+                    avatar: userData.avatar || ''
+                };
+                setUserInfo(userInfoData);
+                setOriginalInfo(userInfoData);
+            } catch (error) {
+                handleError(error, 'Error al cargar el perfil del usuario');
+            } finally {
+                setLoadingProfile(false);
+            }
         };
-        setUserInfo(mockUserData);
-        setOriginalInfo(mockUserData);
-    }, []);
+
+        loadUserProfile();
+    }, [handleError]);
 
     const handleInputChange = (field: keyof UserInfo, value: string) => {
         setUserInfo(prev => ({
@@ -46,11 +72,12 @@ export default function PersonalInfo() {
         try {
             setLoading(true);
 
-            // TODO: Implementar llamada al backend para actualizar usuario
-            console.log('Guardando información del usuario:', userInfo);
-
-            // Simular delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Actualizar perfil en el backend
+            await updateUserProfile({
+                firstName: userInfo.firstName,
+                lastName: userInfo.lastName,
+                phone: userInfo.phone
+            });
 
             setOriginalInfo(userInfo);
             setEditing(false);
@@ -70,14 +97,80 @@ export default function PersonalInfo() {
         setEditing(false);
     };
 
+    const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        // Validar tipo de archivo
+        if (!file.type.startsWith('image/')) {
+            alert('❌ Por favor selecciona un archivo de imagen válido');
+            return;
+        }
+
+        // Validar tamaño (5MB máximo)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('❌ El archivo es demasiado grande. Máximo 5MB');
+            return;
+        }
+
+        try {
+            setUploadingAvatar(true);
+            const response = await uploadAvatar(file);
+
+            // Actualizar el estado local con la nueva URL del avatar
+            const updatedUserInfo = { ...userInfo, avatar: response.avatarUrl };
+            setUserInfo(updatedUserInfo);
+            setOriginalInfo(updatedUserInfo);
+
+            alert('✅ Avatar actualizado correctamente');
+        } catch (error) {
+            handleError(error, 'Error al subir el avatar');
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
+
     const hasChanges = originalInfo && JSON.stringify(userInfo) !== JSON.stringify(originalInfo);
 
+    if (loadingProfile) {
+        return (
+            <div className="bg-white rounded-lg shadow-sm border p-6">
+                <div className="flex items-center justify-between mb-6">
+                    <div>
+                        <div className="h-6 bg-gray-200 rounded w-48 mb-2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-32"></div>
+                    </div>
+                    <div className="h-8 w-16 bg-gray-200 rounded"></div>
+                </div>
+
+                <div className="space-y-4">
+                    <div className="flex items-center space-x-4">
+                        <div className="w-16 h-16 bg-gray-200 rounded-full"></div>
+                        <div>
+                            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+                            <div className="h-4 bg-gray-200 rounded w-40"></div>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+                        {[...Array(4)].map((_, i) => (
+                            <div key={i}>
+                                <div className="h-4 bg-gray-200 rounded w-20 mb-2"></div>
+                                <div className="h-10 bg-gray-200 rounded"></div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border dark:border-gray-700 p-6">
+        <div className="bg-white rounded-lg shadow-sm border p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Información Personal</h2>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Actualiza tu información básica</p>
+                    <h2 className="text-lg font-semibold text-gray-900">Información Personal</h2>
+                    <p className="text-sm text-gray-600">Actualiza tu información básica</p>
                 </div>
                 <div className="flex items-center space-x-2">
                     {editing ? (
@@ -112,19 +205,49 @@ export default function PersonalInfo() {
             </div>
 
             <div className="space-y-4">
-                {/* Avatar placeholder */}
+                {/* Avatar */}
                 <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-semibold">
-                        {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
+                    <div className="relative">
+                        {userInfo.avatar ? (
+                            <img
+                                src={userInfo.avatar}
+                                alt="Avatar"
+                                className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                            />
+                        ) : (
+                            <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white text-xl font-semibold">
+                                {userInfo.firstName.charAt(0)}{userInfo.lastName.charAt(0)}
+                            </div>
+                        )}
+                        {uploadingAvatar && (
+                            <div className="absolute inset-0 bg-black bg-opacity-50 rounded-full flex items-center justify-center">
+                                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                            </div>
+                        )}
                     </div>
                     <div>
                         <p className="text-sm font-bold text-gray-900">{userInfo.firstName} {userInfo.lastName}</p>
                         <p className="text-sm text-gray-700">{userInfo.email}</p>
-                        {editing && (
-                            <button className="text-xs text-blue-600 hover:text-blue-800 mt-1">
-                                Cambiar foto de perfil
-                            </button>
-                        )}
+                        <div className="mt-1">
+                            <input
+                                type="file"
+                                id="avatar-upload"
+                                accept="image/*"
+                                onChange={handleAvatarUpload}
+                                className="hidden"
+                                disabled={uploadingAvatar}
+                            />
+                            <label
+                                htmlFor="avatar-upload"
+                                className={`text-xs cursor-pointer transition-colors ${
+                                    uploadingAvatar
+                                        ? 'text-gray-400 cursor-not-allowed'
+                                        : 'text-blue-600 hover:text-blue-800'
+                                }`}
+                            >
+                                {uploadingAvatar ? 'Subiendo...' : 'Cambiar foto de perfil'}
+                            </label>
+                        </div>
                     </div>
                 </div>
 
@@ -140,7 +263,7 @@ export default function PersonalInfo() {
                             value={userInfo.firstName}
                             onChange={(e) => handleInputChange('firstName', e.target.value)}
                             disabled={!editing}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white text-gray-900"
                             placeholder="Tu nombre"
                         />
                     </div>
@@ -155,7 +278,7 @@ export default function PersonalInfo() {
                             value={userInfo.lastName}
                             onChange={(e) => handleInputChange('lastName', e.target.value)}
                             disabled={!editing}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white text-gray-900"
                             placeholder="Tu apellido"
                         />
                     </div>
@@ -168,11 +291,15 @@ export default function PersonalInfo() {
                         <input
                             type="email"
                             value={userInfo.email}
-                            onChange={(e) => handleInputChange('email', e.target.value)}
-                            disabled={!editing}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            disabled={true}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white text-gray-900"
                             placeholder="tu@email.com"
                         />
+                        {editing && (
+                            <p className="text-xs text-gray-500 mt-1">
+                                El email no puede ser modificado por seguridad
+                            </p>
+                        )}
                     </div>
 
                     {/* Teléfono */}
@@ -185,7 +312,7 @@ export default function PersonalInfo() {
                             value={userInfo.phone || ''}
                             onChange={(e) => handleInputChange('phone', e.target.value)}
                             disabled={!editing}
-                            className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 dark:disabled:bg-gray-700 disabled:text-gray-500 dark:disabled:text-gray-400 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-50 disabled:text-gray-500 bg-white text-gray-900"
                             placeholder="+502 1234-5678"
                         />
                     </div>

@@ -55,30 +55,6 @@ export default function ProfilePage() {
                     {/* Configuración de la App */}
                     <div className="space-y-6">
                         <AppSettings />
-
-                        {/* Sección de ayuda */}
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
-                            <div className="flex items-start space-x-3">
-                                <div className="flex-shrink-0">
-                                    <svg className="h-6 w-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-medium text-blue-900">
-                                        ¿Necesitas ayuda?
-                                    </h3>
-                                    <p className="mt-1 text-sm text-blue-700">
-                                        Si tienes problemas con tu cuenta o necesitas asistencia, contáctanos.
-                                    </p>
-                                    <div className="mt-3">
-                                        <button className="text-sm font-medium text-blue-600 hover:text-blue-800">
-                                            Contactar soporte →
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

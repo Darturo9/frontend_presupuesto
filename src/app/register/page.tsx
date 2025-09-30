@@ -31,7 +31,7 @@ export default function RegisterPage() {
             })
                 .then(res => {
                     // Guarda el token si lo necesitas, ejemplo:
-                    Cookies.set('token', res.access_token);
+                    Cookies.set('token', res.access_token, { path: '/', expires: 7 });
                     router.push('/');
                 })
                 .catch(err => {

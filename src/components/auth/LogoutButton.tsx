@@ -1,8 +1,9 @@
 'use client';
 
-import { useSession, signOut as nextAuthSignOut } from 'next-auth/react';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
 import { useState } from 'react';
 import Cookies from 'js-cookie';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 interface LogoutButtonProps {
   className?: string;
@@ -13,7 +14,7 @@ export default function LogoutButton({
   className = "bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded transition",
   children = "Cerrar sesión"
 }: LogoutButtonProps) {
-  const { data: session } = useSession();
+  const { logout: authLogout, session } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
@@ -26,13 +27,32 @@ export default function LogoutButton({
     console.log('🚀 LOGOUT BUTTON: Iniciando proceso...');
 
     try {
-      // Estrategia simple: limpiar todo y recargar
+      // PASO 1: Llamar al logout del hook para activar forceLogout
+      console.log('📞 Llamando a authLogout del hook...');
+      await authLogout();
+
+      // PASO 2: Si hay sesión de Google/NextAuth, cerrarla
+      if (session) {
+        console.log('🔴 Cerrando sesión de NextAuth...');
+        await nextAuthSignOut({
+          redirect: false,
+          callbackUrl: '/'
+        });
+      }
+
+      // PASO 3: Limpiar cookies agresivamente
       console.log('🧹 Limpiando cookies...');
 
-      // Limpiar nuestras cookies
+      // Limpiar token con js-cookie
       Cookies.remove('token');
+      Cookies.remove('token', { path: '/' });
+      Cookies.remove('token', { path: '/', domain: window.location.hostname });
 
-      // Limpiar cookies de NextAuth (todas las variantes posibles)
+      // Método más agresivo: borrar directamente con document.cookie
+      document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      document.cookie = `token=; Path=/; Domain=${window.location.hostname}; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
+
+      // Limpiar cookies de NextAuth
       const cookiesToRemove = [
         'next-auth.session-token',
         '__Secure-next-auth.session-token',
@@ -44,23 +64,17 @@ export default function LogoutButton({
 
       cookiesToRemove.forEach(cookie => {
         Cookies.remove(cookie);
-        // También intentar remover con diferentes paths
         Cookies.remove(cookie, { path: '/' });
         Cookies.remove(cookie, { path: '/', domain: window.location.hostname });
       });
 
+      // PASO 4: Limpiar storage
       console.log('🗑️ Limpiando storage...');
       localStorage.clear();
       sessionStorage.clear();
 
-      // Si hay sesión de Google, cerrar NextAuth
-      if (session) {
-        console.log('🔴 Cerrando sesión de NextAuth...');
-        await nextAuthSignOut({
-          redirect: false,
-          callbackUrl: '/'
-        });
-      }
+      // Verificar si se borró
+      console.log('🔍 Token después de borrar:', Cookies.get('token') ? 'AÚN EXISTE ❌' : 'Borrado correctamente ✅');
 
       console.log('🔄 Redirigiendo a home...');
 

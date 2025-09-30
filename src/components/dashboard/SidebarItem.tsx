@@ -9,18 +9,41 @@ interface SidebarItemProps {
     href: string;
     isActive?: boolean;
     onClick?: () => void;
+    isLogout?: boolean;
 }
 
-export default function SidebarItem({ icon, label, href, isActive = false, onClick }: SidebarItemProps) {
+export default function SidebarItem({ icon, label, href, isActive = false, onClick, isLogout = false }: SidebarItemProps) {
     const baseClasses = "flex items-center px-3 py-2 rounded-lg transition-colors duration-200 text-sm font-medium";
-    const activeClasses = isActive
-        ? "bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 border-r-2 border-blue-700 dark:border-blue-400"
-        : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-200";
+
+    let classes;
+    if (isLogout) {
+        classes = "text-red-600 hover:bg-red-50 hover:text-red-700";
+    } else if (isActive) {
+        classes = "bg-blue-100 text-blue-700 border-r-2 border-blue-700";
+    } else {
+        classes = "text-gray-600 hover:bg-gray-100 hover:text-gray-900";
+    }
+
+    if (isLogout) {
+        return (
+            <button
+                onClick={onClick}
+                className={`${baseClasses} ${classes} w-full text-left`}
+            >
+                <div className="flex-shrink-0 w-5 h-5">
+                    {icon}
+                </div>
+                <span className="ml-3 truncate">
+                    {label}
+                </span>
+            </button>
+        );
+    }
 
     return (
         <Link
             href={href}
-            className={`${baseClasses} ${activeClasses}`}
+            className={`${baseClasses} ${classes}`}
             onClick={onClick}
         >
             <div className="flex-shrink-0 w-5 h-5">

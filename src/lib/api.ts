@@ -47,6 +47,8 @@ api.interceptors.response.use(
             // Token expirado o inválido
             if (typeof window !== 'undefined') {
                 Cookies.remove('token');
+                Cookies.remove('token', { path: '/' });
+                document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
                 window.location.href = '/';
             }
         }

@@ -1,9 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { signOut as nextAuthSignOut } from 'next-auth/react';
+import Cookies from 'js-cookie';
+import { useAuth } from '@/lib/hooks/useAuth';
 
 
 export default function Header() {
+    const { logout: authLogout, session } = useAuth();
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [showLoginModal, setShowLoginModal] = useState(false);
 
@@ -11,8 +15,32 @@ export default function Header() {
         setShowLoginModal(true);
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        console.log('🚀 LOGOUT: Iniciando...');
+
+        // Activar forceLogout en el hook
+        await authLogout();
+
+        // Cerrar sesión de NextAuth si existe
+        if (session) {
+            await nextAuthSignOut({ redirect: false });
+        }
+
+        // Borrar cookies agresivamente
+        Cookies.remove('token');
+        Cookies.remove('token', { path: '/' });
+        document.cookie = 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+
+        // Limpiar storage
+        localStorage.clear();
+        sessionStorage.clear();
+
+        console.log('✅ Token borrado, redirigiendo...');
+
         setIsAuthenticated(false);
+
+        // Redirigir a home
+        window.location.replace('/');
     };
 
     return (

@@ -3,7 +3,7 @@
 import { ReactNode } from 'react';
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext';
 import Sidebar from './Sidebar';
-import LogoutButton from '@/components/auth/LogoutButton';
+import NotificationBell from '@/components/notifications/NotificationBell';
 
 interface DashboardLayoutProps {
     children: ReactNode;
@@ -38,9 +38,9 @@ function DashboardContent({ children }: DashboardLayoutProps) {
                         </h1>
                     </div>
 
-                    {/* Botón logout */}
-                    <div className="flex items-center space-x-4">
-                        <LogoutButton />
+                    {/* Notificaciones */}
+                    <div className="flex items-center">
+                        <NotificationBell />
                     </div>
                 </header>
 
