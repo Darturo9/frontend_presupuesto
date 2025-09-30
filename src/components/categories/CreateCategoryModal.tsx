@@ -41,7 +41,7 @@ export default function CreateCategoryModal({ isOpen, onClose, onSuccess }: Crea
             setLoading(true);
             await createCategory({
                 ...formData,
-                description: formData.description.trim() || undefined
+                description: formData.description?.trim() || undefined
             });
 
             // Reset form

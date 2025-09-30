@@ -2,16 +2,15 @@
 
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from "next/navigation";
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import DashboardStats from '@/components/dashboard/DashboardStats';
-import RecentTransactions, { RecentTransactionsRef } from '@/components/dashboard/RecentTransactions';
+import RecentTransactions from '@/components/dashboard/RecentTransactions';
 import ExpensesByCategory from '@/components/dashboard/ExpensesByCategory';
 
 export default function DashboardPage() {
     const { isAuthenticated, isLoading, user } = useAuth();
     const router = useRouter();
-    const recentTransactionsRef = useRef<RecentTransactionsRef>(null);
 
     // Redirigir al home si no está autenticado
     useEffect(() => {
@@ -56,14 +55,14 @@ export default function DashboardPage() {
 
             {/* Tarjetas de estadísticas */}
             <div className="mb-8">
-                <DashboardStats onTransactionCreated={() => recentTransactionsRef.current?.refetch()} />
+                <DashboardStats />
             </div>
 
             {/* Componentes principales del dashboard */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 lg:gap-8">
                 {/* Transacciones recientes */}
                 <div className="order-1 xl:order-1">
-                    <RecentTransactions ref={recentTransactionsRef} />
+                    <RecentTransactions />
                 </div>
 
                 {/* Gastos por categoría */}
