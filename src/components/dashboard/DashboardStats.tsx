@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useDashboardStats } from '@/lib/hooks/useDashboardStats';
+import { useDashboard } from '@/contexts/DashboardContext';
 import StatCard from './StatCard';
 import CreateTransactionModal from '../transactions/CreateTransactionModal';
 
@@ -9,6 +10,7 @@ interface DashboardStatsProps {
 
 export default function DashboardStats({ onTransactionCreated }: DashboardStatsProps) {
   const { stats, loading, error, refetch } = useDashboardStats();
+  const { refreshDashboard } = useDashboard();
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
 
@@ -22,7 +24,8 @@ export default function DashboardStats({ onTransactionCreated }: DashboardStatsP
 
   const handleModalSuccess = () => {
     refetch(); // Actualizar estadísticas después de crear una transacción
-    onTransactionCreated?.(); // Actualizar transacciones recientes
+    refreshDashboard(); // Actualizar todo el dashboard (transacciones recientes + gastos por categoría)
+    onTransactionCreated?.(); // Callback adicional si se proporciona
   };
 
   if (error) {

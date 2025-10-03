@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getRecentTransactions } from '@/lib/api';
+import { useDashboard } from '@/contexts/DashboardContext';
 
 interface Transaction {
     id: number;
@@ -16,6 +17,7 @@ interface Transaction {
 }
 
 export default function RecentTransactions() {
+    const { refreshKey } = useDashboard();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -37,7 +39,7 @@ export default function RecentTransactions() {
         };
 
         fetchTransactions();
-    }, []);
+    }, [refreshKey]);
 
     const formatAmount = (amount: number, type: 'income' | 'expense') => {
         const formatted = new Intl.NumberFormat('es-GT', {

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { getExpensesByCategory } from '@/lib/api';
+import { useDashboard } from '@/contexts/DashboardContext';
 
 interface CategoryExpense {
     category: string;
@@ -9,6 +10,7 @@ interface CategoryExpense {
 }
 
 export default function ExpensesByCategory() {
+    const { refreshKey } = useDashboard();
     const [expenses, setExpenses] = useState<CategoryExpense[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ export default function ExpensesByCategory() {
         };
 
         fetchExpenses();
-    }, []);
+    }, [refreshKey]);
 
     const formatAmount = (amount: number) => {
         return new Intl.NumberFormat('es-GT', {
