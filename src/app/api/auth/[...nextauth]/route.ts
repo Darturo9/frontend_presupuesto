@@ -11,6 +11,15 @@ const handler = NextAuth({
             clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
         }),
     ],
+    session: {
+        strategy: 'jwt',
+        maxAge: 60 * 24 * 60 * 60, // 60 días (2 meses) - debe coincidir con el JWT del backend
+        updateAge: 24 * 60 * 60, // Actualizar cada 24 horas
+    },
+    pages: {
+        signIn: '/', // Página de login personalizada
+        error: '/', // Redirigir a home en caso de error
+    },
     callbacks: {
         async signIn({ user, account, profile }) {
             console.log('🔐 [SIGNIN] Iniciando signIn callback');
@@ -60,15 +69,17 @@ const handler = NextAuth({
             return true;
         },
 
-        async jwt({ token, user, profile }) {
+        async jwt({ token, user, profile, trigger }) {
             console.log('🎫 [JWT] Iniciando jwt callback');
             console.log('🎫 [JWT] Token actual:', JSON.stringify(token, null, 2));
             console.log('🎫 [JWT] User:', JSON.stringify(user, null, 2));
+            console.log('🎫 [JWT] Trigger:', trigger);
 
-            // Si tenemos token del backend, lo guardamos
+            // Si es un nuevo login, guardar el token y datos del usuario
             if (user?.backendToken) {
                 console.log('✅ [JWT] Guardando backendToken en token');
                 token.backendToken = user.backendToken;
+                token.backendTokenIssuedAt = Math.floor(Date.now() / 1000); // Timestamp en segundos
             }
 
             // Guardamos también los datos del perfil para la sesión
@@ -78,6 +89,17 @@ const handler = NextAuth({
                 token.firstName = (profile as any).given_name;
                 token.lastName = (profile as any).family_name;
                 token.avatar = (profile as any).picture;
+            }
+
+            // Verificar si el token del backend ha expirado (60 días = 5184000 segundos)
+            const now = Math.floor(Date.now() / 1000);
+            const tokenAge = now - (token.backendTokenIssuedAt as number || now);
+            const TOKEN_MAX_AGE = 60 * 24 * 60 * 60; // 60 días (2 meses) en segundos
+
+            if (token.backendToken && tokenAge >= TOKEN_MAX_AGE) {
+                console.log('⚠️ [JWT] El token del backend ha expirado, limpiando sesión');
+                // Retornar token vacío para forzar logout
+                return {};
             }
 
             console.log('🎫 [JWT] Token final:', JSON.stringify(token, null, 2));

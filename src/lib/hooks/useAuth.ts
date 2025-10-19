@@ -27,11 +27,27 @@ export const useAuth = () => {
             return;
         }
 
+        // Si la sesión está presente pero no tiene backendToken, significa que expiró
+        // Esto previene el loop infinito
+        if (status === 'authenticated' && session && !session.backendToken) {
+            console.warn('⚠️ Sesión sin token del backend - posiblemente expirada');
+            setIsAuthenticated(false);
+            setIsLoading(false);
+            // Limpiar cookies para forzar re-login
+            Cookies.remove('token');
+            Cookies.remove('token', { path: '/' });
+            // Hacer signOut silencioso
+            nextAuthSignOut({ redirect: false }).catch(err =>
+                console.error('Error al cerrar sesión expirada:', err)
+            );
+            return;
+        }
+
         const manualToken = Cookies.get('token');
 
         // Si hay sesión de Google, guardamos el token automáticamente
         if (session?.backendToken) {
-            Cookies.set('token', session.backendToken, { path: '/', expires: 7 }); // 7 días
+            Cookies.set('token', session.backendToken, { path: '/', expires: 60 }); // 60 días (2 meses, igual que el JWT del backend)
             setIsAuthenticated(true);
             // Reset forceLogout cuando hay una nueva sesión válida
             setForceLogout(false);
